@@ -12,6 +12,10 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Tables\Actions\ExportAction;
+use Filament\Tables\Actions\ExportBulkAction;
+use App\Exports\UsersExport;
+use Maatwebsite\Excel\Excel;
 
 class UserResource extends Resource
 {
@@ -45,7 +49,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->sortable()
                     ->searchable()
-                    ->description(fn (User $record) => $record->email),
+                    ->description(fn(User $record) => $record->email),
                 Tables\Columns\TextColumn::make('email')
                     ->sortable()
                     ->searchable()
@@ -55,14 +59,37 @@ class UserResource extends Resource
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->headerActions([
+                ExportAction::make()
+                    ->label('Export')
+                    ->exporter(UsersExport::class),
+
+            ])
             ->filters([
                 Tables\Filters\Filter::make('verified')
-                    ->query(fn (Builder $query) => $query->whereNotNull('email_verified_at')),
+                    ->query(fn(Builder $query) => $query->whereNotNull('email_verified_at')),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ]);
+    }
+
+    public static function getExportColumns(): array
+    {
+        return [
+            'id',
+            'name',
+            'email',
+            'created_at',
+        ];
+    }
+
+    public static function getExportFormats(): array
+    {
+        return [
+            'created_at' => 'Y-m-d H:i:s',
+        ];
     }
 
     public static function getRelations(): array
